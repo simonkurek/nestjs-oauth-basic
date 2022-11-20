@@ -2,10 +2,12 @@ import {
   Injectable,
   BadRequestException,
   ForbiddenException,
+  NotFoundException,
 } from '@nestjs/common';
 import { UsersService } from 'src/users/users.service';
 import { User } from '../users/entities/user.entity';
 import { JwtService } from '@nestjs/jwt';
+import { OAuthProvider } from './oauth.provider';
 
 @Injectable()
 export class AuthService {
@@ -40,31 +42,22 @@ export class AuthService {
     };
   }
 
-  async signInWithGoogle(data) {
-    if (!data.user) throw new BadRequestException();
-
-    let user = (
-      await this.usersService.findBy({ where: [{ googleId: data.user.id }] })
+  async signInWith(oauthProvider: OAuthProvider, userDto: User) {
+    const user = (
+      await this.usersService.findBy({ where: [{ email: userDto.email }] })
     )[0];
-    if (user) return this.login(user);
-
-    user = (
-      await this.usersService.findBy({ where: [{ email: data.user.email }] })
-    )[0];
-    if (user)
+    // if (user) throw new NotFoundException('User not found');
+    if (user && user.oauthProvider === oauthProvider) {
+      return this.login(user);
+    } else if (user && user.oauthProvider !== oauthProvider) {
       throw new ForbiddenException(
-        "User already exists, but Google account was not connected to user's account",
+        "User already exists, but account was not connected to user's account",
       );
+    }
 
     try {
-      const newUser = new User();
-      newUser.firstName = data.user.firstName;
-      newUser.lastName = data.user.lastName;
-      newUser.email = data.user.email;
-      newUser.googleId = data.user.id;
-
-      await this.usersService.store(newUser);
-      return this.login(newUser);
+      await this.usersService.store(userDto);
+      return this.login(userDto);
     } catch (e) {
       throw new Error(e);
     }
