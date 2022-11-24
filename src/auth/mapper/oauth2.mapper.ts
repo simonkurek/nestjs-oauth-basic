@@ -9,21 +9,17 @@ const createUser = (email: string, firstName: string, lastName: string) => {
   user.lastName = lastName;
   return user;
 };
-
-const OAuth2DataMapper = (
-  oauth2Data: OAuth2FacebookDto | OAuth2GoogleDto,
-): User => {
+export const OAuth2GoogleDataMapper = (oauth2Data: OAuth2GoogleDto): User => {
   // const { accessToken } = oauth2Data;
-  let newUser: User;
-  if (oauth2Data instanceof OAuth2FacebookDto) {
-    const { user } = oauth2Data;
-    const { email, firstName, lastName } = user;
-    newUser = createUser(email, firstName, lastName);
-  } else if (oauth2Data instanceof OAuth2GoogleDto) {
-    const { email, firstName, lastName } = oauth2Data;
-    newUser = createUser(email, firstName, lastName);
-  }
-  return newUser;
+  const { email, firstName, lastName } = oauth2Data;
+  return createUser(email, firstName, lastName);
 };
 
-export default OAuth2DataMapper;
+export const OAuth2FacebookDataMapper = (
+  oauth2Data: OAuth2FacebookDto,
+): User => {
+  // const { accessToken } = oauth2Data;
+  const { user } = oauth2Data;
+  const { email, firstName, lastName } = user;
+  return createUser(email, firstName, lastName);
+};
